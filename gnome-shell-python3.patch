@@ -1,4 +1,4 @@
-From 5e252bd9d9c64cae3ef153338dfdd7638c4cd9e5 Mon Sep 17 00:00:00 2001
+From 3bf7bcd702c28da564814e7a9ce15adb5cd0d67c Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Florian=20M=C3=BCllner?= <fmuellner@gnome.org>
 Date: Thu, 14 Jun 2018 17:11:30 +0200
 Subject: [PATCH] build: Revert Python3 port
@@ -7,12 +7,12 @@ This is mostly a revert of commit be3c3c64c1, with slight adjustments
 due to the build system switch.
 ---
  meson.build                       |  2 +-
- src/gnome-shell-extension-tool.in | 40 +++++++++++++++---------------
- src/gnome-shell-perf-tool.in      | 41 ++++++++++++++++---------------
- 3 files changed, 42 insertions(+), 41 deletions(-)
+ src/gnome-shell-extension-tool.in | 44 +++++++++++++++----------------
+ src/gnome-shell-perf-tool.in      | 41 ++++++++++++++--------------
+ 3 files changed, 44 insertions(+), 43 deletions(-)
 
 diff --git a/meson.build b/meson.build
-index 978ed6506..663a4d06f 100644
+index f38798caf..ef34a71d2 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -137,7 +137,7 @@ if get_option('man')
@@ -25,7 +25,7 @@ index 978ed6506..663a4d06f 100644
  
  cc = meson.get_compiler('c')
 diff --git a/src/gnome-shell-extension-tool.in b/src/gnome-shell-extension-tool.in
-index f6c37629c..ab9c951ba 100755
+index f6c37629c..aba3cff20 100755
 --- a/src/gnome-shell-extension-tool.in
 +++ b/src/gnome-shell-extension-tool.in
 @@ -14,7 +14,7 @@ except ImportError:
@@ -126,7 +126,7 @@ index f6c37629c..ab9c951ba 100755
          sys.exit(1)
  
      # Use a while loop here to remove *all* mentions instances
-@@ -170,7 +170,7 @@ def disable_extension(uuid):
+@@ -170,14 +170,14 @@ def disable_extension(uuid):
          extensions.remove(uuid)
  
      settings.set_strv(ENABLED_EXTENSIONS_KEY, extensions)
@@ -135,6 +135,23 @@ index f6c37629c..ab9c951ba 100755
  
  def reload_extension(uuid):
      settings = Gio.Settings(schema='org.gnome.shell')
+     extensions = settings.get_strv(ENABLED_EXTENSIONS_KEY)
+ 
+     if uuid not in extensions:
+-        print("%r is not enabled or installed." % (uuid,), file=sys.stderr)
++        print >> sys.stderr, "%r is not enabled or installed." % (uuid,)
+         sys.exit(1)
+ 
+     proxy = Gio.DBusProxy.new_sync(Gio.bus_get_sync(Gio.BusType.SESSION, None),
+@@ -193,7 +193,7 @@ def reload_extension(uuid):
+                     -1,
+                     None)
+ 
+-    print("%r reloaded." % (uuid,), file=sys.stderr)
++    print >> sys.stderr, "%r reloaded." % (uuid,)
+ 
+ 
+ def main():
 diff --git a/src/gnome-shell-perf-tool.in b/src/gnome-shell-perf-tool.in
 index b2a4521a3..55bfdf39f 100755
 --- a/src/gnome-shell-perf-tool.in
@@ -261,5 +278,5 @@ index b2a4521a3..55bfdf39f 100755
      return True
  
 -- 
-2.17.1
+2.21.0
 

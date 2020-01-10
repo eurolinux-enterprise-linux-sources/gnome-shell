@@ -1,6 +1,6 @@
 Name:           gnome-shell
 Version:        3.28.3
-Release:        6%{?dist}
+Release:        8%{?dist}
 Summary:        Window management and application launching for GNOME
 
 Group:          User Interface/Desktops
@@ -47,6 +47,9 @@ Patch39: 0001-appDisplay-Show-full-app-name-on-hover.patch
 Patch50: 0001-keyboard-Handle-no-window-case-in-FocusTracker.patch
 
 Patch51: 0001-keyboard-Listen-to-IbusPanelService-focus-in-out-to-.patch
+
+# Backport dnd fix (#1705366)
+Patch52: 0001-dnd-Nullify-_dragActor-after-we-ve-destroyed-it-and-.patch
 
 %define libcroco_version 0.6.8
 %define eds_version 3.17.2
@@ -263,11 +266,18 @@ glib-compile-schemas --allow-any-name %{_datadir}/glib-2.0/schemas &> /dev/null 
 %{_mandir}/man1/%{name}.1.gz
 
 %changelog
-* Tue Oct 30 2018 Scientific Linux Auto Patch Process <SCIENTIFIC-LINUX-DEVEL@LISTSERV.FNAL.GOV>
+* Tue Jun 11 2019 Scientific Linux Auto Patch Process <SCIENTIFIC-LINUX-DEVEL@LISTSERV.FNAL.GOV>
 - Added Source: gnome-shell_spec-use-our-artwork.patch
 -->  Brand this with SL colors
 - Added Source: gnome-shell.ini
 -->  Config file for automated patch script
+
+* Wed May 15 2019 Florian Müllner <fmuellner@redhat.com> - 3.28.3-8
+- Fix python2 backport of extension-tool
+  Resolves: #1694577
+
+* Thu May 02 2019 Jonas Ådahl <jadahl@redhat.com> - 3.28.3-7
+- Backport dnd freeze fix (#1705366)
 
 * Wed Sep 19 2018 Carlos Garnacho <cgarnach@redhat.com> - 3.28.3-6
 - Track IBus focus for X11 OSK
