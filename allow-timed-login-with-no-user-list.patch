@@ -1,4 +1,4 @@
-From e4f97202aab89525b208e49f017f521f433c3592 Mon Sep 17 00:00:00 2001
+From 10a47a23aab29d805a4e87ef181d4141d5500707 Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Tue, 19 Apr 2016 13:12:46 -0400
 Subject: [PATCH] loginDialog: allow timed login with disabled user list
@@ -13,8 +13,8 @@ auth prompt, in that scenario.
 ---
  data/theme/gnome-shell-sass/_common.scss |  4 +++
  js/gdm/authPrompt.js                     | 40 ++++++++++++++++++++++++
- js/gdm/loginDialog.js                    | 31 ++++++++++++++++--
- 3 files changed, 73 insertions(+), 2 deletions(-)
+ js/gdm/loginDialog.js                    | 28 +++++++++++++++--
+ 3 files changed, 70 insertions(+), 2 deletions(-)
 
 diff --git a/data/theme/gnome-shell-sass/_common.scss b/data/theme/gnome-shell-sass/_common.scss
 index 2f05098df..4e82ef58b 100644
@@ -97,7 +97,7 @@ index 89cef4d5d..e44281117 100644
          if (this._preemptiveAnswerWatchId) {
              this._idleMonitor.remove_watch(this._preemptiveAnswerWatchId);
 diff --git a/js/gdm/loginDialog.js b/js/gdm/loginDialog.js
-index 4a93545af..ce12c8325 100644
+index 4a93545af..65d9edf1a 100644
 --- a/js/gdm/loginDialog.js
 +++ b/js/gdm/loginDialog.js
 @@ -738,6 +738,9 @@ var LoginDialog = new Lang.Class({
@@ -110,17 +110,7 @@ index 4a93545af..ce12c8325 100644
          }
      },
  
-@@ -992,6 +995,9 @@ var LoginDialog = new Lang.Class({
-     },
- 
-     _showTimedLoginAnimation() {
-+        if (this._disableUserList)
-+            return this._authPrompt.showTimedLoginIndicator(this._timedLoginAnimationTime);
-+
-         this._timedLoginItem.actor.grab_key_focus();
-         return this._timedLoginItem.showTimedLoginIndicator(this._timedLoginAnimationTime);
-     },
-@@ -1019,17 +1025,33 @@ var LoginDialog = new Lang.Class({
+@@ -1019,17 +1022,33 @@ var LoginDialog = new Lang.Class({
      },
  
      _startTimedLogin(userName, delay) {
@@ -155,7 +145,7 @@ index 4a93545af..ce12c8325 100644
                           // If we're just starting out, start on the right
                           // item.
                           if (!this._userManager.is_loaded) {
-@@ -1040,6 +1062,9 @@ var LoginDialog = new Lang.Class({
+@@ -1040,6 +1059,9 @@ var LoginDialog = new Lang.Class({
                       this._blockTimedLoginUntilIdle,
  
                       () => {
@@ -165,7 +155,7 @@ index 4a93545af..ce12c8325 100644
                           this._userList.scrollToItem(this._timedLoginItem);
                       },
  
-@@ -1064,7 +1089,9 @@ var LoginDialog = new Lang.Class({
+@@ -1064,7 +1086,9 @@ var LoginDialog = new Lang.Class({
          if (this._timedLoginItem)
              this._timedLoginItem.hideTimedLoginIndicator();
  
@@ -177,5 +167,5 @@ index 4a93545af..ce12c8325 100644
          if (userName)
              this._startTimedLogin(userName, this._timedLoginDelay);
 -- 
-2.20.1
+2.17.1
 

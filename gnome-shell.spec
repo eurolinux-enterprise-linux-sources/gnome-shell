@@ -1,6 +1,6 @@
 Name:           gnome-shell
 Version:        3.28.3
-Release:        13%{?dist}
+Release:        6%{?dist}
 Summary:        Window management and application launching for GNOME
 
 Group:          User Interface/Desktops
@@ -42,21 +42,11 @@ Patch36: 0001-windowMenu-Bring-back-workspaces-submenu-for-static-.patch
 Patch37: 0001-global-Allow-overriding-the-override-schema.patch
 Patch38: 0001-system-don-t-throw-an-exception-if-power-off-disable.patch
 Patch39: 0001-appDisplay-Show-full-app-name-on-hover.patch
-Patch40: fix-close-dialog-annoyances.patch
 
 # Backported from upstream
 Patch50: 0001-keyboard-Handle-no-window-case-in-FocusTracker.patch
 
 Patch51: 0001-keyboard-Listen-to-IbusPanelService-focus-in-out-to-.patch
-
-# Don't log warnings when bonding with NetworkManager #1596474
-Patch52: 0001-network-Don-t-assume-the-active-connection-has-been-.patch
-
-# Backport dnd fix (#1685997)
-Patch53: 0001-dnd-Nullify-_dragActor-after-we-ve-destroyed-it-and-.patch
-
-# Handle rapid mouse input better (#1756263)
-Patch54: 0001-boxpointer-Ungrab-pointer-when-hiding.patch
 
 %define libcroco_version 0.6.8
 %define eds_version 3.17.2
@@ -196,7 +186,7 @@ easy to use experience.
 %setup -q -n libsass-3.4.5 -b3 -T
 %setup -q -n sassc-3.4.1 -b2 -T
 %autosetup -S git
-%{__cp} %{_docdir}/sl-logos-*/sl-gdm-theme/noise-texture.png data/theme
+%{__cp} %{_docdir}/sl-logos-70.0.3/sl-gdm-theme/noise-texture.png data/theme
 
 %build
 (cd ../libsass-3.4.5;
@@ -273,38 +263,11 @@ glib-compile-schemas --allow-any-name %{_datadir}/glib-2.0/schemas &> /dev/null 
 %{_mandir}/man1/%{name}.1.gz
 
 %changelog
-* Thu Oct 17 2019 Scientific Linux Auto Patch Process <SCIENTIFIC-LINUX-DEVEL@LISTSERV.FNAL.GOV>
+* Tue Oct 30 2018 Scientific Linux Auto Patch Process <SCIENTIFIC-LINUX-DEVEL@LISTSERV.FNAL.GOV>
 - Added Source: gnome-shell_spec-use-our-artwork.patch
 -->  Brand this with SL colors
 - Added Source: gnome-shell.ini
 -->  Config file for automated patch script
-
-* Wed Oct 02 2019 Jonas Ådahl <jadahl@redhat.com> - 3.28.3-13
-- Change method for handling rapid mouse input better
-  Resolves: #1756263
-
-* Fri Sep 27 2019 Jonas Ådahl <jadahl@redhat.com> - 3.28.3-12
-- Handle rapid mouse input better
-  Resolves: #1756263
-
-* Fri May 24 2019 Florian Müllner <fmuellner@redhat.com> - 3.28.3-11
-- Fix unresponsive-app dialog blocking other windows
-  Resolves: #1713776
-
-* Tue Apr 30 2019 Jonas Ådahl <jadahl@redhat.com> - 3.28.3-10
-- Backport dnd freeze fix (#1685997)
-
-* Tue Mar 26 2019 Jonas Ådahl <jadahl@redhat.com> - 3.28.3-9
-- Backport NM interaction patch.
-- Resolves: #1596474
-
-* Mon Mar 25 2019 Ray Strode <rstrode@redhat.com> - 3.28.3-8
-- Fix timed login with disabled user list
-  Resolves: #1658686
-
-* Tue Jan 29 2019 Florian Müllner <fmuellner@redhat.com> - 3.28.3-7
-- Fix revert of python3 port
-  Resolves: #1493526
 
 * Wed Sep 19 2018 Carlos Garnacho <cgarnach@redhat.com> - 3.28.3-6
 - Track IBus focus for X11 OSK
