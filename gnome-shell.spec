@@ -1,6 +1,6 @@
 Name:           gnome-shell
 Version:        3.28.3
-Release:        11%{?dist}
+Release:        13%{?dist}
 Summary:        Window management and application launching for GNOME
 
 Group:          User Interface/Desktops
@@ -54,6 +54,9 @@ Patch52: 0001-network-Don-t-assume-the-active-connection-has-been-.patch
 
 # Backport dnd fix (#1685997)
 Patch53: 0001-dnd-Nullify-_dragActor-after-we-ve-destroyed-it-and-.patch
+
+# Handle rapid mouse input better (#1756263)
+Patch54: 0001-boxpointer-Ungrab-pointer-when-hiding.patch
 
 %define libcroco_version 0.6.8
 %define eds_version 3.17.2
@@ -193,7 +196,7 @@ easy to use experience.
 %setup -q -n libsass-3.4.5 -b3 -T
 %setup -q -n sassc-3.4.1 -b2 -T
 %autosetup -S git
-%{__cp} %{_docdir}/sl-logos-70.0.3/sl-gdm-theme/noise-texture.png data/theme
+%{__cp} %{_docdir}/sl-logos-*/sl-gdm-theme/noise-texture.png data/theme
 
 %build
 (cd ../libsass-3.4.5;
@@ -270,11 +273,19 @@ glib-compile-schemas --allow-any-name %{_datadir}/glib-2.0/schemas &> /dev/null 
 %{_mandir}/man1/%{name}.1.gz
 
 %changelog
-* Tue Aug 06 2019 Scientific Linux Auto Patch Process <SCIENTIFIC-LINUX-DEVEL@LISTSERV.FNAL.GOV>
+* Thu Oct 17 2019 Scientific Linux Auto Patch Process <SCIENTIFIC-LINUX-DEVEL@LISTSERV.FNAL.GOV>
 - Added Source: gnome-shell_spec-use-our-artwork.patch
 -->  Brand this with SL colors
 - Added Source: gnome-shell.ini
 -->  Config file for automated patch script
+
+* Wed Oct 02 2019 Jonas Ådahl <jadahl@redhat.com> - 3.28.3-13
+- Change method for handling rapid mouse input better
+  Resolves: #1756263
+
+* Fri Sep 27 2019 Jonas Ådahl <jadahl@redhat.com> - 3.28.3-12
+- Handle rapid mouse input better
+  Resolves: #1756263
 
 * Fri May 24 2019 Florian Müllner <fmuellner@redhat.com> - 3.28.3-11
 - Fix unresponsive-app dialog blocking other windows
