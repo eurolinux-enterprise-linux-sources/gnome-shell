@@ -1,45 +1,38 @@
-From fb872747e5697098c87e97bab13c4095b653053b Mon Sep 17 00:00:00 2001
+From e4f97202aab89525b208e49f017f521f433c3592 Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Tue, 19 Apr 2016 13:12:46 -0400
 Subject: [PATCH] loginDialog: allow timed login with disabled user list
 
----
- data/theme/gnome-shell-high-contrast.css |  3 +++
- data/theme/gnome-shell.css               |  3 +++
- js/gdm/authPrompt.js                     | 41 ++++++++++++++++++++++++++++++++
- js/gdm/loginDialog.js                    | 29 +++++++++++++++++++---
- 4 files changed, 73 insertions(+), 3 deletions(-)
+At the moment the timed login feature is implemented in the user list.
+If there's no user list, we don't show the indicator anywhere and
+don't proceed with timed login.
 
-diff --git a/data/theme/gnome-shell-high-contrast.css b/data/theme/gnome-shell-high-contrast.css
-index e7b94624a..364725de3 100644
---- a/data/theme/gnome-shell-high-contrast.css
-+++ b/data/theme/gnome-shell-high-contrast.css
-@@ -1716,6 +1716,9 @@ StScrollBar {
-   padding-bottom: 12px;
-   spacing: 8px;
-   width: 23em; }
-+  .login-dialog-prompt-layout .login-dialog-timed-login-indicator {
-+    height: 2px;
-+    background-color: #8b8b8b; }
+This commit allows timed login to work when the user list is disabled.
+It accomplishes this by putting the timed login indicator on the
+auth prompt, in that scenario.
+---
+ data/theme/gnome-shell-sass/_common.scss |  4 +++
+ js/gdm/authPrompt.js                     | 40 ++++++++++++++++++++++++
+ js/gdm/loginDialog.js                    | 31 ++++++++++++++++--
+ 3 files changed, 73 insertions(+), 2 deletions(-)
+
+diff --git a/data/theme/gnome-shell-sass/_common.scss b/data/theme/gnome-shell-sass/_common.scss
+index 2f05098df..4e82ef58b 100644
+--- a/data/theme/gnome-shell-sass/_common.scss
++++ b/data/theme/gnome-shell-sass/_common.scss
+@@ -1825,6 +1825,10 @@ StScrollBar {
+       padding-bottom: 12px;
+       spacing: 8px;
+       width: 23em;
++      .login-dialog-timed-login-indicator {
++          height: 2px;
++          background-color: darken($fg_color,40%);
++      }
+   }
  
- .login-dialog-prompt-label {
-   color: #bebeb6;
-diff --git a/data/theme/gnome-shell.css b/data/theme/gnome-shell.css
-index c1207dcd5..5d754a2bb 100644
---- a/data/theme/gnome-shell.css
-+++ b/data/theme/gnome-shell.css
-@@ -1716,6 +1716,9 @@ StScrollBar {
-   padding-bottom: 12px;
-   spacing: 8px;
-   width: 23em; }
-+  .login-dialog-prompt-layout .login-dialog-timed-login-indicator {
-+    height: 2px;
-+    background-color: #8b8b8b; }
- 
- .login-dialog-prompt-label {
-   color: #bebeb6;
+   .login-dialog-prompt-label {
 diff --git a/js/gdm/authPrompt.js b/js/gdm/authPrompt.js
-index 9affbdd5f..366f34687 100644
+index 89cef4d5d..e44281117 100644
 --- a/js/gdm/authPrompt.js
 +++ b/js/gdm/authPrompt.js
 @@ -2,6 +2,7 @@
@@ -50,7 +43,7 @@ index 9affbdd5f..366f34687 100644
  const Lang = imports.lang;
  const Pango = imports.gi.Pango;
  const Signals = imports.signals;
-@@ -119,6 +120,11 @@ var AuthPrompt = new Lang.Class({
+@@ -117,6 +118,11 @@ var AuthPrompt = new Lang.Class({
  
          this._entry.grab_key_focus();
  
@@ -62,38 +55,37 @@ index 9affbdd5f..366f34687 100644
          this._message = new St.Label({ opacity: 0,
                                         styleClass: 'login-dialog-message' });
          this._message.clutter_text.line_wrap = true;
-@@ -144,6 +150,41 @@ var AuthPrompt = new Lang.Class({
+@@ -142,6 +148,40 @@ var AuthPrompt = new Lang.Class({
          this._defaultButtonWell.add_child(this._spinner.actor);
      },
  
-+    showTimedLoginIndicator: function(time) {
++    showTimedLoginIndicator(time) {
 +        let hold = new Batch.Hold();
 +
 +        this.hideTimedLoginIndicator();
 +
 +        let startTime = GLib.get_monotonic_time();
 +
-+        this._timedLoginTimeoutId = GLib.timeout_add (GLib.PRIORITY_DEFAULT,
-+                                                      33,
-+                                                      Lang.bind(this, function() {
-+                                                          let currentTime = GLib.get_monotonic_time();
-+                                                          let elapsedTime = (currentTime - startTime) / GLib.USEC_PER_SEC;
-+                                                          this._timedLoginIndicator.scale_x = elapsedTime / time;
-+                                                          if (elapsedTime >= time) {
-+                                                              this._timedLoginTimeoutId = 0;
-+                                                              hold.release();
-+                                                              return GLib.SOURCE_REMOVE;
-+                                                          }
++        this._timedLoginTimeoutId = GLib.timeout_add (GLib.PRIORITY_DEFAULT, 33,
++            () => {
++                let currentTime = GLib.get_monotonic_time();
++                let elapsedTime = (currentTime - startTime) / GLib.USEC_PER_SEC;
++                this._timedLoginIndicator.scale_x = elapsedTime / time;
++                if (elapsedTime >= time) {
++                    this._timedLoginTimeoutId = 0;
++                    hold.release();
++                    return GLib.SOURCE_REMOVE;
++                }
 +
-+                                                          return GLib.SOURCE_CONTINUE;
-+                                                      }));
++                return GLib.SOURCE_CONTINUE;
++            });
 +
 +        GLib.Source.set_name_by_id(this._timedLoginTimeoutId, '[gnome-shell] this._timedLoginTimeoutId');
 +
 +        return hold;
 +    },
 +
-+    hideTimedLoginIndicator: function() {
++    hideTimedLoginIndicator() {
 +        if (this._timedLoginTimeoutId) {
 +            GLib.source_remove(this._timedLoginTimeoutId);
 +            this._timedLoginTimeoutId = 0;
@@ -101,14 +93,14 @@ index 9affbdd5f..366f34687 100644
 +        this._timedLoginIndicator.scale_x = 0.;
 +    },
 +
-     _onDestroy: function() {
+     _onDestroy() {
          if (this._preemptiveAnswerWatchId) {
              this._idleMonitor.remove_watch(this._preemptiveAnswerWatchId);
 diff --git a/js/gdm/loginDialog.js b/js/gdm/loginDialog.js
-index c1262b1e8..6f6de00da 100644
+index 4a93545af..ce12c8325 100644
 --- a/js/gdm/loginDialog.js
 +++ b/js/gdm/loginDialog.js
-@@ -756,6 +756,9 @@ var LoginDialog = new Lang.Class({
+@@ -738,6 +738,9 @@ var LoginDialog = new Lang.Class({
  
              if (this._authPrompt.verificationStatus == AuthPrompt.AuthPromptStatus.NOT_VERIFYING)
                  this._authPrompt.reset();
@@ -118,61 +110,62 @@ index c1262b1e8..6f6de00da 100644
          }
      },
  
-@@ -1014,6 +1017,9 @@ var LoginDialog = new Lang.Class({
+@@ -992,6 +995,9 @@ var LoginDialog = new Lang.Class({
      },
  
-     _showTimedLoginAnimation: function() {
-+        if (this._disableUserList) {
-+                return this._authPrompt.showTimedLoginIndicator(this._timedLoginAnimationTime);
-+        }
+     _showTimedLoginAnimation() {
++        if (this._disableUserList)
++            return this._authPrompt.showTimedLoginIndicator(this._timedLoginAnimationTime);
++
          this._timedLoginItem.actor.grab_key_focus();
          return this._timedLoginItem.showTimedLoginIndicator(this._timedLoginAnimationTime);
      },
-@@ -1041,19 +1047,31 @@ var LoginDialog = new Lang.Class({
+@@ -1019,17 +1025,33 @@ var LoginDialog = new Lang.Class({
      },
  
-     _startTimedLogin: function(userName, delay) {
+     _startTimedLogin(userName, delay) {
 +        this._timedLoginUserName = userName;
          this._timedLoginItem = null;
          this._timedLoginDelay = delay;
          this._timedLoginAnimationTime = delay;
--
-         let tasks = [function() {
--                         return this._waitForItemForUser(userName);
+ 
+-        let tasks = [() => this._waitForItemForUser(userName),
++        let tasks = [() => {
 +                         if (this._disableUserList)
 +                             return;
 +
 +                         this._timedLoginUserListHold = this._waitForItemForUser(userName);
 +
 +                         return this._timedLoginUserListHold;
-                      },
++                     },
  
-                      function() {
+                      () => {
 +                         this._timedLoginUserListHold = null;
 +
 +                         if (this._disableUserList)
 +                             return;
++
                           this._timedLoginItem = this._userList.getItemFromUserName(userName);
                       },
  
-                      function() {
+                      () => {
 +                         if (this._disableUserList)
 +                             return;
 +
                           // If we're just starting out, start on the right
                           // item.
                           if (!this._userManager.is_loaded) {
-@@ -1064,6 +1082,9 @@ var LoginDialog = new Lang.Class({
+@@ -1040,6 +1062,9 @@ var LoginDialog = new Lang.Class({
                       this._blockTimedLoginUntilIdle,
  
-                      function() {
+                      () => {
 +                         if (this._disableUserList)
 +                             return;
 +
                           this._userList.scrollToItem(this._timedLoginItem);
                       },
  
-@@ -1088,7 +1109,9 @@ var LoginDialog = new Lang.Class({
+@@ -1064,7 +1089,9 @@ var LoginDialog = new Lang.Class({
          if (this._timedLoginItem)
              this._timedLoginItem.hideTimedLoginIndicator();
  
@@ -184,5 +177,5 @@ index c1262b1e8..6f6de00da 100644
          if (userName)
              this._startTimedLogin(userName, this._timedLoginDelay);
 -- 
-2.14.2
+2.20.1
 

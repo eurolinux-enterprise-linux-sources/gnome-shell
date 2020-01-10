@@ -1,0 +1,18 @@
+--- gnome-shell.spec.orig	2017-08-07 15:47:13.223459872 -0500
++++ gnome-shell.spec	2017-08-07 15:49:53.299022455 -0500
+@@ -117,6 +117,7 @@ Requires:       gnome-bluetooth%{?_isa}
+ Requires:       gnome-desktop3%{?_isa} >= %{gnome_desktop_version}
+ # wrapper script uses to restart old GNOME session if run --replace
+ # from the command line
++BuildRequires:	sl-logos >= 70.0.3-0.7
+ Requires:       gobject-introspection%{?_isa} >= %{gobject_introspection_version}
+ Requires:       gjs%{?_isa} >= %{gjs_version}
+ Requires:       gtk3%{?_isa} >= %{gtk3_version}
+@@ -169,6 +170,7 @@ be used only by extensions.gnome.org.
+ 
+ %prep
+ %autosetup -S git
++%{__cp} %{_docdir}/sl-logos-70.0.3/sl-gdm-theme/noise-texture.png data/theme
+ 
+ %if 0%{?rhel}
+ # Use Python 2

@@ -1,4 +1,4 @@
-From 59b6d50061f3c8e5858230a881267014e8395594 Mon Sep 17 00:00:00 2001
+From b675ef2be8b5938b036714cbe42e9653b348227b Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Mon, 28 Sep 2015 10:57:02 -0400
 Subject: [PATCH 1/3] smartcardManager: add way to detect if user logged using
@@ -16,10 +16,10 @@ This commit adds the necessary api to detect that case.
  1 file changed, 7 insertions(+)
 
 diff --git a/js/misc/smartcardManager.js b/js/misc/smartcardManager.js
-index 4388f286d..75e9836e9 100644
+index 60808b371..503f78836 100644
 --- a/js/misc/smartcardManager.js
 +++ b/js/misc/smartcardManager.js
-@@ -113,6 +113,13 @@ var SmartcardManager = new Lang.Class({
+@@ -112,6 +112,13 @@ var SmartcardManager = new Lang.Class({
              return false;
  
          return true;
@@ -34,10 +34,10 @@ index 4388f286d..75e9836e9 100644
  
  });
 -- 
-2.14.2
+1.8.3.1
 
 
-From b25d32c8fef60dec567f05e6681214a6995656fc Mon Sep 17 00:00:00 2001
+From 8af02156a99145ebfb5cea9488b78495e25002b8 Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Mon, 28 Sep 2015 19:56:53 -0400
 Subject: [PATCH 2/3] gdm: only unlock with smartcard, if smartcard used for
@@ -50,13 +50,13 @@ gets used for unlock, too.
  1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/js/gdm/util.js b/js/gdm/util.js
-index bae46bfe0..a44184c17 100644
+index 261e1e433..3d6d69c10 100644
 --- a/js/gdm/util.js
 +++ b/js/gdm/util.js
 @@ -134,7 +134,6 @@ var ShellUserVerifier = new Lang.Class({
          this._settings = new Gio.Settings({ schema_id: LOGIN_SCREEN_SCHEMA });
          this._settings.connect('changed',
-                                Lang.bind(this, this._updateDefaultService));
+                                this._updateDefaultService.bind(this));
 -        this._updateDefaultService();
  
          this._fprintManager = Fprint.FprintManager();
@@ -68,12 +68,12 @@ index bae46bfe0..a44184c17 100644
 +        this._updateDefaultService();
 +
          this._smartcardInsertedId = this._smartcardManager.connect('smartcard-inserted',
-                                                                    Lang.bind(this, this._checkForSmartcard));
+                                                                    this._checkForSmartcard.bind(this));
          this._smartcardRemovedId = this._smartcardManager.connect('smartcard-removed',
-@@ -413,7 +414,9 @@ var ShellUserVerifier = new Lang.Class({
+@@ -412,7 +413,9 @@ var ShellUserVerifier = new Lang.Class({
      },
  
-     _updateDefaultService: function() {
+     _updateDefaultService() {
 -        if (this._settings.get_boolean(PASSWORD_AUTHENTICATION_KEY))
 +        if (this._smartcardManager.loggedInWithToken())
 +            this._defaultService = SMARTCARD_SERVICE_NAME;
@@ -82,10 +82,10 @@ index bae46bfe0..a44184c17 100644
          else if (this._settings.get_boolean(SMARTCARD_AUTHENTICATION_KEY))
              this._defaultService = SMARTCARD_SERVICE_NAME;
 -- 
-2.14.2
+1.8.3.1
 
 
-From 3309c476c6815e03f17359155f565118a2ad57b2 Mon Sep 17 00:00:00 2001
+From 49557edf36b817e33fb9f008f88e28a805b7665b Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Mon, 28 Sep 2015 19:57:36 -0400
 Subject: [PATCH 3/3] gdm: update default service when smartcard inserted
@@ -98,10 +98,10 @@ after we get a smartcard insertion event.
  1 file changed, 2 insertions(+)
 
 diff --git a/js/gdm/util.js b/js/gdm/util.js
-index a44184c17..83a12fb6c 100644
+index 3d6d69c10..f5f9d5e5d 100644
 --- a/js/gdm/util.js
 +++ b/js/gdm/util.js
-@@ -336,6 +336,8 @@ var ShellUserVerifier = new Lang.Class({
+@@ -335,6 +335,8 @@ var ShellUserVerifier = new Lang.Class({
              else if (this._preemptingService == SMARTCARD_SERVICE_NAME)
                  this._preemptingService = null;
  
@@ -111,5 +111,5 @@ index a44184c17..83a12fb6c 100644
          }
      },
 -- 
-2.14.2
+1.8.3.1
 

@@ -28,7 +28,7 @@ index 3fd24d275..d9f36b281 100644
          ExtensionDownloader.checkForUpdates();
      },
  
-+    LoadUserExtension: function(uuid) {
++    LoadUserExtension(uuid) {
 +        let extension = ExtensionUtils.extensions[uuid];
 +        if (extension)
 +            return true;
@@ -46,7 +46,7 @@ index 3fd24d275..d9f36b281 100644
 +
      ShellVersion: Config.PACKAGE_VERSION,
  
-     _extensionStateChanged: function(_, newState) {
+     _extensionStateChanged(_, newState) {
 -- 
 2.14.2
 

@@ -1,48 +1,115 @@
-From 7196f5d0a60243e218d6a906b9db4f3b6608b47c Mon Sep 17 00:00:00 2001
+From 519df156f73419d83fbd043e73abc8d3f93233b0 Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Wed, 15 Jan 2014 16:45:34 -0500
 Subject: [PATCH] panel: add an icon to the ActivitiesButton
 
-Requested by brand
 ---
- data/theme/gnome-shell-high-contrast.css | 3 +++
- data/theme/gnome-shell.css               | 3 +++
+ data/theme/gnome-shell-sass/_common.scss | 5 +++++
  js/ui/panel.js                           | 9 ++++++++-
- 3 files changed, 14 insertions(+), 1 deletion(-)
+ 2 files changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/data/theme/gnome-shell-high-contrast.css b/data/theme/gnome-shell-high-contrast.css
-index 51477e713..e7b94624a 100644
---- a/data/theme/gnome-shell-high-contrast.css
-+++ b/data/theme/gnome-shell-high-contrast.css
-@@ -688,6 +688,9 @@ StScrollBar {
+diff --git a/data/theme/gnome-shell-sass/_common.scss b/data/theme/gnome-shell-sass/_common.scss
+index 1b0c20650..639f062f1 100644
+--- a/data/theme/gnome-shell-sass/_common.scss
++++ b/data/theme/gnome-shell-sass/_common.scss
+@@ -749,60 +749,65 @@ StScrollBar {
+     -panel-corner-background-color: rgba(0, 0, 0, 0.35);
+     -panel-corner-border-width: 2px;
+     -panel-corner-border-color: transparent;
+ 
+     &:active, &:overview, &:focus {
+       -panel-corner-border-color: lighten($selected_bg_color,5%);
+     }
+ 
+     &.lock-screen, &.login-screen, &.unlock-screen {
+       -panel-corner-radius: 0;
+       -panel-corner-background-color: transparent;
+       -panel-corner-border-color: transparent;
+     }
+   }
+ 
+   .panel-button {
+     -natural-hpadding: 12px;
+     -minimum-hpadding: 6px;
+     font-weight: bold;
+     color: #eee;
+     text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.9);
+     transition-duration: 100ms;
+ 
+     .app-menu-icon {
        -st-icon-style: symbolic;
        margin-left: 4px;
-       margin-right: 4px; }
-+    #panel .panel-button .panel-logo-icon {
+       margin-right: 4px;
+       //dimensions of the icon are hardcoded
+     }
+ 
++    .panel-logo-icon {
 +      padding-right: .4em;
-+      icon-size: 1em; }
-     #panel .panel-button .system-status-icon,
-     #panel .panel-button .app-menu-icon > StIcon,
-     #panel .panel-button .popup-menu-arrow {
-diff --git a/data/theme/gnome-shell.css b/data/theme/gnome-shell.css
-index 6aab70867..c1207dcd5 100644
---- a/data/theme/gnome-shell.css
-+++ b/data/theme/gnome-shell.css
-@@ -688,6 +688,9 @@ StScrollBar {
-       -st-icon-style: symbolic;
-       margin-left: 4px;
-       margin-right: 4px; }
-+    #panel .panel-button .panel-logo-icon {
-+      padding-right: .4em;
-+      icon-size: 1em; }
-     #panel .panel-button .system-status-icon,
-     #panel .panel-button .app-menu-icon > StIcon,
-     #panel .panel-button .popup-menu-arrow {
++      icon-size: 1em;
++    }
++
+     .system-status-icon,
+     .app-menu-icon > StIcon,
+     .popup-menu-arrow {
+       icon-shadow: 0px 1px 2px rgba(0, 0, 0, 0.9);
+     }
+ 
+     &:hover {
+       color: lighten($fg_color, 10%);
+       text-shadow: 0px 1px 6px rgba(0, 0, 0, 1);
+ 
+       .system-status-icon,
+       .app-menu-icon > StIcon,
+       .popup-menu-arrow {
+         icon-shadow: 0px 1px 6px rgba(0, 0, 0, 1);
+       }
+     }
+ 
+     &:active, &:overview, &:focus, &:checked {
+       // Trick due to St limitations. It needs a background to draw
+       // a box-shadow
+       background-color: rgba(0, 0, 0, 0.01);
+       box-shadow: inset 0 -2px 0px lighten($selected_bg_color,5%);
+       color: lighten($fg_color,10%);
+ 
+       & > .system-status-icon { icon-shadow: black 0 2px 2px; }
+     }
+ 
+     .system-status-icon { icon-size: 1.09em; padding: 0 5px; }
+     .unlock-screen &,
+     .login-screen &,
 diff --git a/js/ui/panel.js b/js/ui/panel.js
-index d7c8397b5..3ec43210e 100644
+index 2f593247d..d1a572503 100644
 --- a/js/ui/panel.js
 +++ b/js/ui/panel.js
-@@ -409,11 +409,18 @@ var ActivitiesButton = new Lang.Class({
+@@ -379,65 +379,72 @@ var AppMenuButton = new Lang.Class({
+         }
+         if (this._overviewShowingId > 0) {
+             Main.overview.disconnect(this._overviewShowingId);
+             this._overviewShowingId = 0;
+         }
+         if (this._showsAppMenuId > 0) {
+             this._gtkSettings.disconnect(this._showsAppMenuId);
+             this._showsAppMenuId = 0;
+         }
+         if (this._switchWorkspaceNotifyId > 0) {
+             global.window_manager.disconnect(this._switchWorkspaceNotifyId);
+             this._switchWorkspaceNotifyId = 0;
+         }
+ 
+         this.parent();
+     }
+ });
+ 
+ Signals.addSignalMethods(AppMenuButton.prototype);
+ 
+ var ActivitiesButton = new Lang.Class({
+     Name: 'ActivitiesButton',
+     Extends: PanelMenu.Button,
+ 
+     _init() {
+         this.parent(0.0, null, true);
+         this.actor.accessible_role = Atk.Role.TOGGLE_BUTTON;
  
          this.actor.name = 'panelActivities';
  
@@ -62,6 +129,33 @@ index d7c8397b5..3ec43210e 100644
  
          this.actor.label_actor = this._label;
  
+         this.actor.connect('captured-event', this._onCapturedEvent.bind(this));
+         this.actor.connect_after('key-release-event', this._onKeyRelease.bind(this));
+ 
+         Main.overview.connect('showing', () => {
+             this.actor.add_style_pseudo_class('overview');
+             this.actor.add_accessible_state (Atk.StateType.CHECKED);
+         });
+         Main.overview.connect('hiding', () => {
+             this.actor.remove_style_pseudo_class('overview');
+             this.actor.remove_accessible_state (Atk.StateType.CHECKED);
+         });
+ 
+         this._xdndTimeOut = 0;
+     },
+ 
+     handleDragOver(source, actor, x, y, time) {
+         if (source != Main.xdndHandler)
+             return DND.DragMotionResult.CONTINUE;
+ 
+         if (this._xdndTimeOut != 0)
+             Mainloop.source_remove(this._xdndTimeOut);
+         this._xdndTimeOut = Mainloop.timeout_add(BUTTON_DND_ACTIVATION_TIMEOUT, () => {
+             this._xdndToggleOverview(actor);
+         });
+         GLib.Source.set_name_by_id(this._xdndTimeOut, '[gnome-shell] this._xdndToggleOverview');
+ 
+         return DND.DragMotionResult.CONTINUE;
 -- 
-2.14.2
+2.17.1
 

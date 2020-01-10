@@ -1,6 +1,6 @@
 Name:           gnome-shell
-Version:        3.26.2
-Release:        5%{?dist}
+Version:        3.28.3
+Release:        11%{?dist}
 Summary:        Window management and application launching for GNOME
 
 Group:          User Interface/Desktops
@@ -8,24 +8,21 @@ License:        GPLv2+
 Provides:       desktop-notification-daemon
 URL:            https://wiki.gnome.org/Projects/GnomeShell
 #VCS:           git:git://git.gnome.org/gnome-shell
-Source0:        http://download.gnome.org/sources/gnome-shell/3.26/%{name}-%{version}.tar.xz
+Source0:        http://download.gnome.org/sources/gnome-shell/3.28/%{name}-%{version}.tar.xz
 Source1:        org.gnome.shell.gschema.override
-Source2:	gnome-shell.ini
+Source2:        https://github.com/sass/sassc/archive/3.4.1.tar.gz
+Source3:        https://github.com/sass/libsass/archive/3.4.5.tar.gz
+Source4:	gnome-shell_spec-use-our-artwork.patch
+Source5:	gnome-shell.ini
 
 # Replace Epiphany with Firefox in the default favourite apps list
 Patch1: gnome-shell-favourite-apps-firefox.patch
 Patch2: gnome-shell-favourite-apps-yelp.patch
 Patch3: gnome-shell-favourite-apps-terminal.patch
-
-# el7 build fixes
-Patch5: 0001-Revert-build-Drop-autotools-support.patch
-Patch6: 0002-Revert-build-Remove-included-Makefiles-as-well.patch
-Patch7: 0003-build-Remove-check-for-missing-disthook.patch
-Patch8: 0004-Revert-build-Use-new-mkenums_simple-function.patch
+# Fix the build with Python 2
+Patch4: gnome-shell-python3.patch
 
 # GDM/Lock stuff
-Patch10: 0001-gdm-honor-timed-login-delay-even-if-animations-disab.patch
-Patch11: 0001-gdm-use-password-authentication-if-all-schemes-are-d.patch
 Patch12: 0001-screenShield-unblank-when-inserting-smartcard.patch
 Patch13: enforce-smartcard-at-unlock.patch
 Patch14: disable-unlock-entry-until-question.patch
@@ -34,60 +31,66 @@ Patch16: 0001-data-install-process-working.svg-to-filesystem.patch
 Patch17: 0001-loginDialog-make-info-messages-themed.patch
 Patch18: 0001-gdm-add-AuthList-control.patch
 Patch19: 0002-gdmUtil-enable-support-for-GDM-s-ChoiceList-PAM-exte.patch
-Patch20: 0001-loginDialog-only-emit-session-activated-on-user-acti.patch
 
 # Misc.
 Patch30: 0001-shellDBus-Add-a-DBus-method-to-load-a-single-extensi.patch
 Patch31: 0001-extensions-Add-a-SESSION_MODE-extension-type.patch
-Patch32: 0001-magnifier-don-t-spew-to-console-when-focus-moves-aro.patch
 Patch33: 0001-extensionSystem-Notify-about-extension-issues-on-upd.patch
 Patch34: 0001-panel-add-an-icon-to-the-ActivitiesButton.patch
 Patch35: 0001-app-Fall-back-to-window-title-instead-of-WM_CLASS.patch
 Patch36: 0001-windowMenu-Bring-back-workspaces-submenu-for-static-.patch
 Patch37: 0001-global-Allow-overriding-the-override-schema.patch
 Patch38: 0001-system-don-t-throw-an-exception-if-power-off-disable.patch
-Patch39: 0001-padOsd-Ensure-to-pick-pad-devices-only.patch
+Patch39: 0001-appDisplay-Show-full-app-name-on-hover.patch
+Patch40: fix-close-dialog-annoyances.patch
 
-%define gnome_bluetooth_version 1:3.9.0
-%define gobject_introspection_version 1.45.4
-%define gjs_version 1.47.0
-%define mutter_version 3.25.90
-%define gtk3_version 3.15.0
-%define eds_version 3.13.90
-%define gnome_desktop_version 3.7.90
-%define json_glib_version 0.13.2
-%define gsettings_desktop_schemas_version 3.21.3
-%define caribou_version 0.4.8
+# Backported from upstream
+Patch50: 0001-keyboard-Handle-no-window-case-in-FocusTracker.patch
+
+Patch51: 0001-keyboard-Listen-to-IbusPanelService-focus-in-out-to-.patch
+
+# Don't log warnings when bonding with NetworkManager #1596474
+Patch52: 0001-network-Don-t-assume-the-active-connection-has-been-.patch
+
+# Backport dnd fix (#1685997)
+Patch53: 0001-dnd-Nullify-_dragActor-after-we-ve-destroyed-it-and-.patch
+
 %define libcroco_version 0.6.8
-%define telepathy_logger_version 0.2.6
+%define eds_version 3.17.2
+%define gnome_desktop_version 3.7.90
+%define glib2_version 2.56.0
+%define gobject_introspection_version 1.49.1
+%define gjs_version 1.51.90
+%define gtk3_version 3.15.0
+%define json_glib_version 0.13.2
+%define mutter_version 3.28.0
+%define polkit_version 0.100
+%define gsettings_desktop_schemas_version 3.21.3
+%define ibus_version 1.5.2
+%define gnome_bluetooth_version 1:3.9.0
 %define gstreamer_version 1.4.5
 
-## Needed when we re-autogen
-BuildRequires:  autoconf >= 2.53
-BuildRequires:  automake >= 1.10
-BuildRequires:  gettext-devel
+BuildRequires:  meson
 BuildRequires:  git
-BuildRequires:  gnome-common >= 2.2.0
-BuildRequires:  libtool >= 1.4.3
-BuildRequires:  caribou-devel >= %{caribou_version}
+BuildRequires:  ibus-devel >= %{ibus_version}
 BuildRequires:  chrpath
 BuildRequires:  dbus-glib-devel
 BuildRequires:  desktop-file-utils
 BuildRequires:  evolution-data-server-devel >= %{eds_version}
 BuildRequires:  gcr-devel
 BuildRequires:  gjs-devel >= %{gjs_version}
-BuildRequires:  glib2-devel
+BuildRequires:  glib2-devel >= %{glib2_version}
 BuildRequires:  gobject-introspection >= %{gobject_introspection_version}
 BuildRequires:  json-glib-devel >= %{json_glib_version}
 BuildRequires:  upower-devel
 BuildRequires:  libgnome-keyring-devel
-BuildRequires:  libnm-gtk-devel
 BuildRequires:  mesa-libGL-devel
-BuildRequires:  NetworkManager-glib-devel
-BuildRequires:  polkit-devel
+BuildRequires:  NetworkManager-libnm-devel
+BuildRequires:  pkgconfig(libsystemd)
+BuildRequires:  polkit-devel >= %{polkit_version}
 BuildRequires:  startup-notification-devel
-BuildRequires:  telepathy-glib-devel
-BuildRequires:  telepathy-logger-devel >= %{telepathy_logger_version}
+# for theme generation
+BuildRequires:  ruby
 # for screencast recorder functionality
 BuildRequires:  gstreamer1-devel >= %{gstreamer_version}
 BuildRequires:  gtk3-devel >= %{gtk3_version}
@@ -111,35 +114,40 @@ BuildRequires:  gnome-bluetooth-libs-devel >= %{gnome_bluetooth_version}
 %endif
 BuildRequires:  control-center
 # Bootstrap requirements
-BuildRequires: gtk-doc gnome-common
+BuildRequires: gtk-doc
 %ifnarch s390 s390x
 Requires:       gnome-bluetooth%{?_isa} >= %{gnome_bluetooth_version}
 %endif
 Requires:       gnome-desktop3%{?_isa} >= %{gnome_desktop_version}
+%if 0%{?fedora}
+# Disabled on RHEL to allow logging into KDE session by default
+Requires:       gnome-session-xsession
+%endif
 # wrapper script uses to restart old GNOME session if run --replace
 # from the command line
 BuildRequires:	sl-logos >= 70.0.3-0.7
 Requires:       gobject-introspection%{?_isa} >= %{gobject_introspection_version}
 Requires:       gjs%{?_isa} >= %{gjs_version}
 Requires:       gtk3%{?_isa} >= %{gtk3_version}
+Requires:       libnma%{?_isa}
 # needed for loading SVG's via gdk-pixbuf
 Requires:       librsvg2%{?_isa}
 # needed as it is now split from Clutter
 Requires:       json-glib%{?_isa} >= %{json_glib_version}
-# For $libdir/mozilla/plugins
-Requires:       mozilla-filesystem%{?_isa}
 Requires:       mutter%{?_isa} >= %{mutter_version}
 Requires:       upower%{?_isa}
-Requires:       polkit%{?_isa} >= 0.100
+Requires:       polkit%{?_isa} >= %{polkit_version}
 Requires:       gnome-desktop3%{?_isa} >= %{gnome_desktop_version}
+Requires:       glib2%{?_isa} >= %{glib2_version}
 Requires:       gsettings-desktop-schemas%{?_isa} >= %{gsettings_desktop_schemas_version}
 Requires:       libcroco%{?_isa} >= %{libcroco_version}
-Requires:       telepathy-logger%{?_isa} >= %{telepathy_logger_version}
+Requires:       telepathy-logger%{?_isa}
+Requires:       telepathy-glib%{?_isa}
 Requires:       gstreamer1%{?_isa} >= %{gstreamer_version}
 # needed for schemas
 Requires:       at-spi2-atk%{?_isa}
 # needed for on-screen keyboard
-Requires:       caribou%{?_isa} >= %{caribou_version}
+Requires:       ibus%{?_isa} >= %{ibus_version}
 # needed for the user menu
 Requires:       accountsservice-libs%{?_isa}
 Requires:       gdm-libs%{?_isa}
@@ -156,6 +164,23 @@ Requires:       python3%{_isa}
 # needed for clocks/weather integration
 Requires:       geoclue2-libs%{?_isa}
 Requires:       libgweather%{?_isa}
+# Needed for launching flatpak apps etc
+Requires:       xdg-desktop-portal-gtk
+
+%if 0%{?rhel}
+# In Fedora, fedora-obsolete-packages obsoletes caribou
+Obsoletes:      caribou < 0.4.21-10
+Obsoletes:      caribou-antler < 0.4.21-10
+Obsoletes:      caribou-devel < 0.4.21-10
+Obsoletes:      caribou-gtk2-module < 0.4.21-10
+Obsoletes:      caribou-gtk3-module < 0.4.21-10
+Obsoletes:      python-caribou < 0.4.21-10
+Obsoletes:      python2-caribou < 0.4.21-10
+Obsoletes:      python3-caribou < 0.4.21-10
+
+# Removed in RHEL 7.6
+Obsoletes:      gnome-shell-browser-plugin < 3.28.3-4
+%endif
 
 %description
 GNOME Shell provides core user interface functions for the GNOME 3 desktop,
@@ -164,35 +189,27 @@ advantage of the capabilities of modern graphics hardware and introduces
 innovative user interface concepts to provide a visually attractive and
 easy to use experience.
 
-%package browser-plugin
-Summary: Browser plugin to install extensions from extensions.gnome.org
-Requires: %{name} = %{version}-%{release}
-Requires: mozilla-filesystem%{?_isa}
-
-%description browser-plugin
-The "GNOME Shell Integration" plugin provides integration with
-Gnome Shell for live extension enabling and disabling. It can
-be used only by extensions.gnome.org.
-
 %prep
+%setup -q -n libsass-3.4.5 -b3 -T
+%setup -q -n sassc-3.4.1 -b2 -T
 %autosetup -S git
 %{__cp} %{_docdir}/sl-logos-70.0.3/sl-gdm-theme/noise-texture.png data/theme
 
 %build
-%if 0%{?rhel}
-# Use Python 2
-sed -i -e 's/AM_PATH_PYTHON(\[3\])/AM_PATH_PYTHON([2.5])/' configure.ac
-autoreconf -fi
-%endif
-
-(if ! test -x configure; then NOCONFIGURE=1 ./autogen.sh; fi;
- %configure --disable-static --disable-compile-warnings)
-make V=1 %{?_smp_mflags}
+(cd ../libsass-3.4.5;
+ export LIBSASS_VERSION=3.4.5
+ make %{?_smp_mflags})
+(cd ../sassc-3.4.1;
+ %make_build LDFLAGS="$RPM_OPT_FLAGS $PWD/../libsass-3.4.5/lib/libsass.a" \
+             CFLAGS="$RPM_OPT_FLAGS -I$PWD/../libsass-3.4.5/include" \
+             CXXFLAGS="$RPM_OPT_FLAGS" \
+             SASS_LIBSASS_PATH=$PWD/../libsass-3.4.5)
+export PATH=$PWD/../sassc-3.4.1/bin:$PATH
+%meson -Dbrowser_plugin=false
+%meson_build
 
 %install
-%make_install
-
-rm -rf %{buildroot}/%{_libdir}/mozilla/plugins/*.la
+%meson_install
 
 # Create empty directories where other packages can drop extensions
 mkdir -p %{buildroot}%{_datadir}/gnome-shell/extensions
@@ -227,9 +244,7 @@ glib-compile-schemas --allow-any-name %{_datadir}/glib-2.0/schemas &> /dev/null 
 %{_datadir}/applications/evolution-calendar.desktop
 %{_datadir}/applications/org.gnome.Shell.PortalHelper.desktop
 %{_datadir}/gnome-control-center/keybindings/50-gnome-shell-system.xml
-%{_datadir}/gnome-shell
-%{_datadir}/gnome-shell/theme
-%{_datadir}/gnome-shell/theme/*.svg
+%{_datadir}/gnome-shell/
 %{_datadir}/dbus-1/services/org.gnome.Shell.CalendarServer.service
 %{_datadir}/dbus-1/services/org.gnome.Shell.HotplugSniffer.service
 %{_datadir}/dbus-1/services/org.gnome.Shell.PortalHelper.service
@@ -253,16 +268,68 @@ glib-compile-schemas --allow-any-name %{_datadir}/glib-2.0/schemas &> /dev/null 
 %dir %{_datadir}/GConf/gsettings
 %{_datadir}/GConf/gsettings/gnome-shell-overrides.convert
 %{_mandir}/man1/%{name}.1.gz
-# exclude as these should be in a devel package for st etc
-%exclude %{_datadir}/gtk-doc
-
-%files browser-plugin
-%{_libdir}/mozilla/plugins/*.so
 
 %changelog
-* Tue Apr 10 2018 Scientific Linux Auto Patch Process <SCIENTIFIC-LINUX-DEVEL@LISTSERV.FNAL.GOV>
+* Tue Aug 06 2019 Scientific Linux Auto Patch Process <SCIENTIFIC-LINUX-DEVEL@LISTSERV.FNAL.GOV>
+- Added Source: gnome-shell_spec-use-our-artwork.patch
+-->  Brand this with SL colors
 - Added Source: gnome-shell.ini
 -->  Config file for automated patch script
+
+* Fri May 24 2019 Florian Müllner <fmuellner@redhat.com> - 3.28.3-11
+- Fix unresponsive-app dialog blocking other windows
+  Resolves: #1713776
+
+* Tue Apr 30 2019 Jonas Ådahl <jadahl@redhat.com> - 3.28.3-10
+- Backport dnd freeze fix (#1685997)
+
+* Tue Mar 26 2019 Jonas Ådahl <jadahl@redhat.com> - 3.28.3-9
+- Backport NM interaction patch.
+- Resolves: #1596474
+
+* Mon Mar 25 2019 Ray Strode <rstrode@redhat.com> - 3.28.3-8
+- Fix timed login with disabled user list
+  Resolves: #1658686
+
+* Tue Jan 29 2019 Florian Müllner <fmuellner@redhat.com> - 3.28.3-7
+- Fix revert of python3 port
+  Resolves: #1493526
+
+* Wed Sep 19 2018 Carlos Garnacho <cgarnach@redhat.com> - 3.28.3-6
+- Track IBus focus for X11 OSK
+- Resolves: #1625700
+
+* Thu Sep 13 2018 Kalev Lember <klember@redhat.com> - 3.28.3-5
+- Require xdg-desktop-portal-gtk
+- Related: #1570030
+
+* Mon Sep 10 2018 Kalev Lember <klember@redhat.com> - 3.28.3-4
+- Remove gnome-shell-browser-plugin subpackage
+- Resolves: #1626104
+
+* Mon Sep 10 2018 Kalev Lember <klember@redhat.com> - 3.28.3-3
+- Obsolete caribou
+- Resolves: #1625882
+
+* Tue Sep 04 2018 Kalev Lember <klember@redhat.com> - 3.28.3-2
+- keyboard: Handle no-window case in FocusTracker
+- Resolves: #1612983
+
+* Wed Aug 01 2018 Kalev Lember <klember@redhat.com> - 3.28.3-1
+- Update to 3.28.3
+- Resolves: #1568624
+
+* Fri Jun 22 2018 Florian Müllner <fmuellner@redhat.com> - 3.28.2-2
+- Update rebased downstream patches
+  Related: #1568624
+- Revert port to python3 of some utility tools
+  Resolves: #1493526
+- Add tooltips to app names in overview
+  Resolves: #1541180
+
+* Tue May 08 2018 Florian Müllner <fmuellner@redhat.com> - 3.28.2-1
+- Update to 3.28.2
+- Resolves: #1568624
 
 * Wed Feb 14 2018 Ray Strode <rstrode@redhat.com> - 3.26.2-5
 - Make session selection bullet isn't shown on wrong item

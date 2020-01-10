@@ -1,7 +1,7 @@
-From 356171d85579d27da3180fd78ffb353f23c9073f Mon Sep 17 00:00:00 2001
+From fd39875612bb6895e820924608c7a9719a9d326e Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Tue, 18 Jul 2017 12:58:14 -0400
-Subject: [PATCH 1/2] gdm: add AuthList control
+Subject: [PATCH] gdm: add AuthList control
 
 Ultimately, we want to add support for GDM's new ChoiceList
 PAM extension.  That extension allows PAM modules to present
@@ -14,17 +14,17 @@ but with less features.  It lacks API specific to the users,
 lacks the built in timed login indicator, etc. It does feature
 a label heading.
 ---
- js/gdm/authList.js            | 198 ++++++++++++++++++++++++++++++++++++++++++
+ js/gdm/authList.js            | 195 ++++++++++++++++++++++++++++++++++
  js/js-resources.gresource.xml |   1 +
- 2 files changed, 199 insertions(+)
+ 2 files changed, 196 insertions(+)
  create mode 100644 js/gdm/authList.js
 
 diff --git a/js/gdm/authList.js b/js/gdm/authList.js
 new file mode 100644
-index 000000000..893e35075
+index 000000000..fc1c3d6e4
 --- /dev/null
 +++ b/js/gdm/authList.js
-@@ -0,0 +1,198 @@
+@@ -0,0 +1,195 @@
 +// -*- mode: js; js-indent-level: 4; indent-tabs-mode: nil -*-
 +/*
 + * Copyright 2017 Red Hat, Inc
@@ -58,7 +58,7 @@ index 000000000..893e35075
 +const AuthListItem = new Lang.Class({
 +    Name: 'AuthListItem',
 +
-+    _init: function(key, text) {
++    _init(key, text) {
 +        this.key = key;
 +        let label = new St.Label({ style_class: 'auth-list-item-label',
 +                                   y_align: Clutter.ActorAlign.CENTER });
@@ -82,14 +82,14 @@ index 000000000..893e35075
 +            this._setSelected(this.actor.hover);
 +        });
 +
-+        this.actor.connect('clicked', Lang.bind(this, this._onClicked));
++        this.actor.connect('clicked', this._onClicked.bind(this));
 +    },
 +
-+    _onClicked: function() {
++    _onClicked() {
 +        this.emit('activate');
 +    },
 +
-+    _setSelected: function(selected) {
++    _setSelected(selected) {
 +        if (selected) {
 +            this.actor.add_style_pseudo_class('selected');
 +            this.actor.grab_key_focus();
@@ -103,7 +103,7 @@ index 000000000..893e35075
 +const AuthList = new Lang.Class({
 +    Name: 'AuthList',
 +
-+    _init: function() {
++    _init() {
 +        this.actor = new St.BoxLayout({ vertical: true,
 +                                        style_class: 'login-dialog-auth-list-layout' });
 +
@@ -122,10 +122,10 @@ index 000000000..893e35075
 +        this._scrollView.add_actor(this._box);
 +        this._items = {};
 +
-+        this.actor.connect('key-focus-in', Lang.bind(this, this._moveFocusToItems));
++        this.actor.connect('key-focus-in', this._moveFocusToItems.bind(this));
 +    },
 +
-+    _moveFocusToItems: function() {
++    _moveFocusToItems() {
 +        let hasItems = Object.keys(this._items).length > 0;
 +
 +        if (!hasItems)
@@ -136,18 +136,18 @@ index 000000000..893e35075
 +
 +        let focusSet = this.actor.navigate_focus(null, Gtk.DirectionType.TAB_FORWARD, false);
 +        if (!focusSet) {
-+            Meta.later_add(Meta.LaterType.BEFORE_REDRAW, Lang.bind(this, function() {
++            Meta.later_add(Meta.LaterType.BEFORE_REDRAW, () => {
 +                this._moveFocusToItems();
 +                return false;
-+            }));
++            });
 +        }
 +    },
 +
-+    _onItemActivated: function(activatedItem) {
++    _onItemActivated(activatedItem) {
 +        this.emit('activate', activatedItem.key);
 +    },
 +
-+    scrollToItem: function(item) {
++    scrollToItem(item) {
 +        let box = item.actor.get_allocation_box();
 +
 +        let adjustment = this._scrollView.get_vscroll_bar().get_adjustment();
@@ -160,7 +160,7 @@ index 000000000..893e35075
 +                            transition: 'easeOutQuad' });
 +    },
 +
-+    jumpToItem: function(item) {
++    jumpToItem(item) {
 +        let box = item.actor.get_allocation_box();
 +
 +        let adjustment = this._scrollView.get_vscroll_bar().get_adjustment();
@@ -170,7 +170,7 @@ index 000000000..893e35075
 +        adjustment.set_value(value);
 +    },
 +
-+    getItem: function(key) {
++    getItem(key) {
 +        let item = this._items[key];
 +
 +        if (!item)
@@ -179,7 +179,7 @@ index 000000000..893e35075
 +        return item;
 +    },
 +
-+    addItem: function(key, text) {
++    addItem(key, text) {
 +        this.removeItem(key);
 +
 +        let item = new AuthListItem(key, text);
@@ -188,21 +188,18 @@ index 000000000..893e35075
 +        this._items[key] = item;
 +
 +        item.connect('activate',
-+                     Lang.bind(this, this._onItemActivated));
++                     this._onItemActivated.bind(this));
 +
 +        // Try to keep the focused item front-and-center
 +        item.actor.connect('key-focus-in',
-+                           Lang.bind(this,
-+                                     function() {
-+                                         this.scrollToItem(item);
-+                                     }));
++                           () => { this.scrollToItem(item); });
 +
 +        this._moveFocusToItems();
 +
 +        this.emit('item-added', item);
 +    },
 +
-+    removeItem: function(key) {
++    removeItem(key) {
 +        let item = this._items[key];
 +
 +        if (!item)
@@ -212,11 +209,11 @@ index 000000000..893e35075
 +        delete this._items[key];
 +    },
 +
-+    numItems: function() {
++    numItems() {
 +        return Object.keys(this._items).length;
 +    },
 +
-+    clear: function() {
++    clear() {
 +        this.label.text = "";
 +        this._box.destroy_all_children();
 +        this._items = {};
@@ -224,7 +221,7 @@ index 000000000..893e35075
 +});
 +Signals.addSignalMethods(AuthList.prototype);
 diff --git a/js/js-resources.gresource.xml b/js/js-resources.gresource.xml
-index 7a5c8ca6f..c0a80f564 100644
+index 883b62d66..58035d303 100644
 --- a/js/js-resources.gresource.xml
 +++ b/js/js-resources.gresource.xml
 @@ -1,6 +1,7 @@
@@ -236,5 +233,5 @@ index 7a5c8ca6f..c0a80f564 100644
      <file>gdm/batch.js</file>
      <file>gdm/fingerprint.js</file>
 -- 
-2.14.2
+2.17.1
 

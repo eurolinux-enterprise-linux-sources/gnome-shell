@@ -1,4 +1,4 @@
-From fa1ec00431d9c0b1592e1b7c56784ef8d8c26a98 Mon Sep 17 00:00:00 2001
+From 77663ec7d0391254ff6e5afb73257d075fcb109e Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Thu, 8 Jun 2017 12:04:31 -0400
 Subject: [PATCH] data: install process-working.svg to filesystem
@@ -6,23 +6,109 @@ Subject: [PATCH] data: install process-working.svg to filesystem
 This helps prevent unlock failure on inplace upgrades between
 7.3 and 7.4
 ---
- data/Makefile.am | 3 +++
- 1 file changed, 3 insertions(+)
+ data/theme/meson.build | 2 ++
+ meson.build            | 2 ++
+ 2 files changed, 4 insertions(+)
 
-diff --git a/data/Makefile.am b/data/Makefile.am
-index 8c01e49d1..f9c198c1c 100644
---- a/data/Makefile.am
-+++ b/data/Makefile.am
-@@ -73,6 +73,9 @@ dist_theme_files =						\
- 		$(SASSC) -a $< $@; \
- 	fi
+diff --git a/data/theme/meson.build b/data/theme/meson.build
+index 22bae3dd2..d5acb8d10 100644
+--- a/data/theme/meson.build
++++ b/data/theme/meson.build
+@@ -1,25 +1,27 @@
+ theme_sources = files([
+   'gnome-shell-high-contrast.scss',
+   'gnome-shell.scss',
+   'gnome-shell-sass/_colors.scss',
+   'gnome-shell-sass/_common.scss',
+   'gnome-shell-sass/_drawing.scss',
+   'gnome-shell-sass/_high-contrast-colors.scss'
+ ])
  
-+themedir = $(pkgdatadir)/theme
-+dist_theme_DATA = theme/process-working.svg
+ styles = [
+   'gnome-shell-high-contrast',
+   'gnome-shell'
+ ]
+ 
+ theme_deps = []
+ 
+ foreach style: styles
+   theme_deps += custom_target('style-' + style,
+                               input: '@0@.scss'.format(style),
+                               output: '@0@.css'.format(style),
+                               command: [
+                                 sassc, '-a', '@INPUT@', '@OUTPUT@'
+                               ],
+                               depend_files: theme_sources)
+ endforeach
 +
- resource_files = $(shell $(GLIB_COMPILE_RESOURCES) --sourcedir=$(srcdir)/theme --generate-dependencies $(srcdir)/gnome-shell-theme.gresource.xml)
- gnome-shell-theme.gresource: gnome-shell-theme.gresource.xml $(resource_files)
- 	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) --target=$@ --sourcedir=$(srcdir)/theme $<
++install_data('process-working.svg', install_dir: themedir)
+diff --git a/meson.build b/meson.build
+index 663a4d06f..7d60d25e2 100644
+--- a/meson.build
++++ b/meson.build
+@@ -30,60 +30,62 @@ startup_req = '>= 0.11'
+ ibus_req = '>= 1.5.2'
+ 
+ bt_req = '>= 3.9.0'
+ gst_req = '>= 0.11.92'
+ nm_req = '>= 0.9.8'
+ secret_req = '>= 0.18'
+ 
+ gnome = import('gnome')
+ i18n  = import('i18n')
+ 
+ prefix = get_option('prefix')
+ 
+ bindir = join_paths(prefix, get_option('bindir'))
+ datadir = join_paths(prefix, get_option('datadir'))
+ libdir = join_paths(prefix, get_option('libdir'))
+ libexecdir = join_paths(prefix, get_option('libexecdir'))
+ mandir = join_paths(prefix, get_option('mandir'))
+ 
+ pkgdatadir = join_paths(datadir, meson.project_name())
+ pkglibdir = join_paths(libdir, meson.project_name())
+ 
+ convertdir = join_paths(datadir, 'GConf', 'gsettings')
+ desktopdir = join_paths(datadir, 'applications')
+ ifacedir = join_paths(datadir, 'dbus-1', 'interfaces')
+ localedir = join_paths(datadir, 'locale')
+ mozplugindir = join_paths(libdir, 'mozilla', 'plugins')
+ portaldir = join_paths(datadir, 'xdg-desktop-portal', 'portals')
+ schemadir = join_paths(datadir, 'glib-2.0', 'schemas')
+ servicedir = join_paths(datadir, 'dbus-1', 'services')
+ 
++themedir = join_paths(pkgdatadir, 'theme')
++
+ plugindir = get_variable('BROWSER_PLUGIN_DIR', mozplugindir)
+ 
+ keybindings_dep = dependency('gnome-keybindings', required: false)
+ if keybindings_dep.found()
+   keysdir = keybindings_dep.get_pkgconfig_variable('keysdir')
+ else
+   keysdir = join_paths(datadir, 'gnome-control-center', 'keybindings')
+ endif
+ 
+ atk_bridge_dep = dependency('atk-bridge-2.0')
+ canberra_dep = dependency('libcanberra')
+ canberra_gtk_dep = dependency('libcanberra-gtk3')
+ ecal_dep = dependency('libecal-1.2', version: ecal_req)
+ eds_dep = dependency('libedataserver-1.2', version: eds_req)
+ gcr_dep = dependency('gcr-base-3', version: gcr_req)
+ gdk_x11_dep = dependency('gdk-x11-3.0')
+ gdk_pixbuf_dep = dependency('gdk-pixbuf-2.0')
+ gi_dep = dependency('gobject-introspection-1.0', version: gi_req)
+ gio_dep = dependency('gio-2.0', version: gio_req)
+ gio_unix_dep = dependency('gio-unix-2.0', version: gio_req)
+ gjs_dep = dependency('gjs-1.0', version: gjs_req)
+ gtk_dep = dependency('gtk+-3.0', version: gtk_req)
+ libxml_dep = dependency('libxml-2.0')
+ croco_dep = dependency('libcroco-0.6', version: croco_req)
+ clutter_dep = dependency(clutter_pc, version: mutter_req)
+ cogl_dep = dependency(cogl_pc, version: mutter_req)
+ cogl_pango_dep = dependency(cogl_pango_pc, version: mutter_req)
+ mutter_dep = dependency(libmutter_pc, version: mutter_req)
+ polkit_dep = dependency('polkit-agent-1', version: polkit_req)
+ soup_dep = dependency('libsoup-2.4')
 -- 
-2.14.2
+2.17.1
 

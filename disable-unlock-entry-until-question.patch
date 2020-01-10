@@ -1,4 +1,4 @@
-From f941682d22a0e6f40e1109df8043291398783ff4 Mon Sep 17 00:00:00 2001
+From 6a698c70044709e53f1a517165360037c070770d Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Wed, 30 Sep 2015 12:51:24 -0400
 Subject: [PATCH 1/3] authPrompt: don't fade out auth messages if user types
@@ -12,23 +12,23 @@ front, before a password is asked.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/js/gdm/authPrompt.js b/js/gdm/authPrompt.js
-index a436431be..dedf39f99 100644
+index 481cd3a77..0ad3d2338 100644
 --- a/js/gdm/authPrompt.js
 +++ b/js/gdm/authPrompt.js
-@@ -185,7 +185,7 @@ var AuthPrompt = new Lang.Class({
+@@ -176,7 +176,7 @@ var AuthPrompt = new Lang.Class({
+         this._updateNextButtonSensitivity(this._entry.text.length > 0);
  
-         this._entry.clutter_text.connect('text-changed',
-                                          Lang.bind(this, function() {
--                                             if (!this._userVerifier.hasPendingMessages)
-+                                             if (!this._userVerifier.hasPendingMessages && this._queryingService && !this._preemptiveAnswer)
-                                                  this._fadeOutMessage();
+         this._entry.clutter_text.connect('text-changed', () => {
+-            if (!this._userVerifier.hasPendingMessages)
++            if (!this._userVerifier.hasPendingMessages && this._queryingService && !this._preemptiveAnswer)
+                 this._fadeOutMessage();
  
-                                              this._updateNextButtonSensitivity(this._entry.text.length > 0 || this.verificationStatus == AuthPromptStatus.VERIFYING);
+             this._updateNextButtonSensitivity(this._entry.text.length > 0 || this.verificationStatus == AuthPromptStatus.VERIFYING);
 -- 
-2.14.2
+1.8.3.1
 
 
-From 7b83ebcdc1d667438de5a0f41cb7b194b2792d1f Mon Sep 17 00:00:00 2001
+From 867988ad707dfc7a7e2bae2ead774bc7369add8c Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Wed, 30 Sep 2015 14:36:33 -0400
 Subject: [PATCH 2/3] authPrompt: don't spin unless answering question
@@ -38,24 +38,24 @@ Subject: [PATCH 2/3] authPrompt: don't spin unless answering question
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/js/gdm/authPrompt.js b/js/gdm/authPrompt.js
-index dedf39f99..b3ff91789 100644
+index 0ad3d2338..f18ef41f2 100644
 --- a/js/gdm/authPrompt.js
 +++ b/js/gdm/authPrompt.js
 @@ -66,8 +66,8 @@ var AuthPrompt = new Lang.Class({
  
-         this.connect('next', Lang.bind(this, function() {
-                          this.updateSensitivity(false);
--                         this.startSpinning();
-                          if (this._queryingService) {
-+                             this.startSpinning();
-                              this._userVerifier.answerQuery(this._queryingService, this._entry.text);
-                          } else {
-                              this._preemptiveAnswer = this._entry.text;
+         this.connect('next', () => {
+                 this.updateSensitivity(false);
+-                this.startSpinning();
+                 if (this._queryingService) {
++                    this.startSpinning();
+                     this._userVerifier.answerQuery(this._queryingService, this._entry.text);
+                 } else {
+                     this._preemptiveAnswer = this._entry.text;
 -- 
-2.14.2
+1.8.3.1
 
 
-From 76e455916f6411c695f4528bffbb49c5832ec568 Mon Sep 17 00:00:00 2001
+From bcbb4c2044344a6ab4fda5975478b8bee07e01f5 Mon Sep 17 00:00:00 2001
 From: Ray Strode <rstrode@redhat.com>
 Date: Mon, 5 Oct 2015 15:26:18 -0400
 Subject: [PATCH 3/3] authPrompt: stop accepting preemptive answer if user
@@ -69,11 +69,11 @@ Typing ahead the password is just a convenience for users who don't
 want to manually lift the shift before typing their passwords, after
 all.
 ---
- js/gdm/authPrompt.js | 38 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+ js/gdm/authPrompt.js | 37 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
 
 diff --git a/js/gdm/authPrompt.js b/js/gdm/authPrompt.js
-index b3ff91789..9affbdd5f 100644
+index f18ef41f2..89cef4d5d 100644
 --- a/js/gdm/authPrompt.js
 +++ b/js/gdm/authPrompt.js
 @@ -10,6 +10,7 @@ const St = imports.gi.St;
@@ -94,21 +94,21 @@ index b3ff91789..9affbdd5f 100644
          if (this._mode == AuthPromptMode.UNLOCK_ONLY)
              reauthenticationOnly = true;
 @@ -71,6 +74,11 @@ var AuthPrompt = new Lang.Class({
-                              this._userVerifier.answerQuery(this._queryingService, this._entry.text);
-                          } else {
-                              this._preemptiveAnswer = this._entry.text;
+                     this._userVerifier.answerQuery(this._queryingService, this._entry.text);
+                 } else {
+                     this._preemptiveAnswer = this._entry.text;
 +
-+                             if (this._preemptiveAnswerWatchId) {
-+                                 this._idleMonitor.remove_watch(this._preemptiveAnswerWatchId);
-+                                 this._preemptiveAnswerWatchId = 0;
-+                             }
-                          }
-                      }));
++                    if (this._preemptiveAnswerWatchId) {
++                        this._idleMonitor.remove_watch(this._preemptiveAnswerWatchId);
++                        this._preemptiveAnswerWatchId = 0;
++                    }
+                 }
+             });
  
-@@ -137,6 +145,11 @@ var AuthPrompt = new Lang.Class({
+@@ -135,6 +143,11 @@ var AuthPrompt = new Lang.Class({
      },
  
-     _onDestroy: function() {
+     _onDestroy() {
 +        if (this._preemptiveAnswerWatchId) {
 +            this._idleMonitor.remove_watch(this._preemptiveAnswerWatchId);
 +            this._preemptiveAnswerWatchId = 0;
@@ -117,10 +117,10 @@ index b3ff91789..9affbdd5f 100644
          this._userVerifier.destroy();
          this._userVerifier = null;
      },
-@@ -358,6 +371,11 @@ var AuthPrompt = new Lang.Class({
+@@ -349,6 +362,11 @@ var AuthPrompt = new Lang.Class({
      },
  
-     setQuestion: function(question) {
+     setQuestion(question) {
 +        if (this._preemptiveAnswerWatchId) {
 +            this._idleMonitor.remove_watch(this._preemptiveAnswerWatchId);
 +            this._preemptiveAnswerWatchId = 0;
@@ -129,11 +129,11 @@ index b3ff91789..9affbdd5f 100644
          this._label.set_text(question);
  
          this._label.show();
-@@ -443,12 +461,32 @@ var AuthPrompt = new Lang.Class({
+@@ -434,12 +452,31 @@ var AuthPrompt = new Lang.Class({
          }
      },
  
-+    _onUserStoppedTypePreemptiveAnswer: function() {
++    _onUserStoppedTypePreemptiveAnswer() {
 +        if (!this._preemptiveAnswerWatchId ||
 +            this._preemptiveAnswer ||
 +            this._queryingService)
@@ -146,7 +146,7 @@ index b3ff91789..9affbdd5f 100644
 +        this.updateSensitivity(false);
 +    },
 +
-     reset: function() {
+     reset() {
          let oldStatus = this.verificationStatus;
          this.verificationStatus = AuthPromptStatus.NOT_VERIFYING;
          this.cancelButton.reactive = true;
@@ -156,12 +156,11 @@ index b3ff91789..9affbdd5f 100644
 +            this._idleMonitor.remove_watch(this._preemptiveAnswerWatchId);
 +        }
 +        this._preemptiveAnswerWatchId = this._idleMonitor.add_idle_watch (500,
-+                                                                          Lang.bind(this,
-+                                                                                    this._onUserStoppedTypePreemptiveAnswer));
++                                                                          this._onUserStoppedTypePreemptiveAnswer.bind(this));
 +
          if (this._userVerifier)
              this._userVerifier.cancel();
  
 -- 
-2.14.2
+1.8.3.1
 

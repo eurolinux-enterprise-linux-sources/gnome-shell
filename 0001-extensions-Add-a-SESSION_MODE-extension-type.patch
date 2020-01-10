@@ -1,4 +1,4 @@
-From 446b7a65536ea60b75f1ec705cd8fa287fda968e Mon Sep 17 00:00:00 2001
+From 7002431540fb01c8ce6bd8781e35ba1072741d94 Mon Sep 17 00:00:00 2001
 From: Rui Matos <tiagomatos@gmail.com>
 Date: Fri, 8 Nov 2013 13:58:09 +0100
 Subject: [PATCH] extensions: Add a SESSION_MODE extension type
@@ -11,10 +11,22 @@ different way since they can't be disabled.
  2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/js/misc/extensionUtils.js b/js/misc/extensionUtils.js
-index ca02582c9..3eea38565 100644
+index 9f77b4c40..1e25da335 100644
 --- a/js/misc/extensionUtils.js
 +++ b/js/misc/extensionUtils.js
-@@ -13,7 +13,8 @@ const FileUtils = imports.misc.fileUtils;
+@@ -1,46 +1,47 @@
+ // -*- mode: js; js-indent-level: 4; indent-tabs-mode: nil -*-
+ 
+ // Common utils for the extension system and the extension
+ // preferences tool
+ 
+ const Lang = imports.lang;
+ const Signals = imports.signals;
+ 
+ const Gio = imports.gi.Gio;
+ 
+ const Config = imports.misc.config;
+ const FileUtils = imports.misc.fileUtils;
  
  var ExtensionType = {
      SYSTEM: 1,
@@ -24,19 +36,100 @@ index ca02582c9..3eea38565 100644
  };
  
  // Maps uuid -> metadata object
+ var extensions = {};
+ 
+ /**
+  * getCurrentExtension:
+  *
+  * Returns the current extension, or null if not called from an extension.
+  */
+ function getCurrentExtension() {
+     let stack = (new Error()).stack.split('\n');
+     let extensionStackLine;
+ 
+     // Search for an occurrence of an extension stack frame
+     // Start at 1 because 0 is the stack frame of this function
+     for (let i = 1; i < stack.length; i++) {
+         if (stack[i].indexOf('/gnome-shell/extensions/') > -1) {
+             extensionStackLine = stack[i];
+             break;
+         }
+     }
+     if (!extensionStackLine)
+         return null;
+ 
+     // The stack line is like:
+     //   init([object Object])@/home/user/data/gnome-shell/extensions/u@u.id/prefs.js:8
+     //
+     // In the case that we're importing from
+     // module scope, the first field is blank:
 diff --git a/js/ui/extensionSystem.js b/js/ui/extensionSystem.js
-index 51ce234c2..c2a11b8a5 100644
+index e35c01ab8..a013a3ee7 100644
 --- a/js/ui/extensionSystem.js
 +++ b/js/ui/extensionSystem.js
-@@ -316,6 +316,8 @@ function _loadExtensions() {
+@@ -289,60 +289,62 @@ function onEnabledExtensionsChanged() {
+ 
+     enabledExtensions = newEnabledExtensions;
+ }
+ 
+ function _onVersionValidationChanged() {
+     // we want to reload all extensions, but only enable
+     // extensions when allowed by the sessionMode, so
+     // temporarily disable them all
+     enabledExtensions = [];
+     for (let uuid in ExtensionUtils.extensions)
+         reloadExtension(ExtensionUtils.extensions[uuid]);
+     enabledExtensions = getEnabledExtensions();
+ 
+     if (Main.sessionMode.allowExtensions) {
+         enabledExtensions.forEach(uuid => {
+             enableExtension(uuid);
+         });
+     }
+ }
+ 
+ function _loadExtensions() {
+     global.settings.connect('changed::' + ENABLED_EXTENSIONS_KEY, onEnabledExtensionsChanged);
+     global.settings.connect('changed::' + DISABLE_USER_EXTENSIONS_KEY, onEnabledExtensionsChanged);
+     global.settings.connect('changed::' + EXTENSION_DISABLE_VERSION_CHECK_KEY, _onVersionValidationChanged);
+ 
+     enabledExtensions = getEnabledExtensions();
+ 
      let finder = new ExtensionUtils.ExtensionFinder();
-     finder.connect('extension-found', function(finder, extension) {
+     finder.connect('extension-found', (finder, extension) => {
          loadExtension(extension);
 +        if (Main.sessionMode.enabledExtensions.indexOf(extension.uuid) != -1)
 +            extension.type = ExtensionUtils.ExtensionType.SESSION_MODE;
      });
      finder.scanExtensions();
  }
+ 
+ function enableAllExtensions() {
+     if (enabled)
+         return;
+ 
+     if (!initted) {
+         _loadExtensions();
+         initted = true;
+     } else {
+         enabledExtensions.forEach(uuid => {
+             enableExtension(uuid);
+         });
+     }
+     enabled = true;
+ }
+ 
+ function disableAllExtensions() {
+     if (!enabled)
+         return;
+ 
+     if (initted) {
+         extensionOrder.slice().reverse().forEach(uuid => {
+             disableExtension(uuid);
+         });
+     }
+ 
+     enabled = false;
 -- 
-2.14.2
+2.17.1
 

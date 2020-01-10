@@ -1,4 +1,4 @@
-From 8d085a574b5b5d1055451a1b430fcf5cb9af4859 Mon Sep 17 00:00:00 2001
+From aa5dbcf4cd7caa9ff1ba2c2c8b65f007314f521a Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Florian=20M=C3=BCllner?= <fmuellner@gnome.org>
 Date: Tue, 14 Mar 2017 17:04:36 +0100
 Subject: [PATCH] windowMenu: Bring back workspaces submenu for static
@@ -13,12 +13,12 @@ are used.
  1 file changed, 16 insertions(+)
 
 diff --git a/js/ui/windowMenu.js b/js/ui/windowMenu.js
-index 7aa57beb3..8751c4c4d 100644
+index f0e564b7e..8c97a1eec 100644
 --- a/js/ui/windowMenu.js
 +++ b/js/ui/windowMenu.js
-@@ -119,6 +119,22 @@ var WindowMenu = new Lang.Class({
-                         window.change_workspace(workspace.get_neighbor(Meta.MotionDirection.DOWN));
-                     }));
+@@ -123,6 +123,22 @@ var WindowMenu = new Lang.Class({
+                         window.change_workspace(workspace.get_neighbor(dir));
+                     });
                  }
 +
 +                let nWorkspaces = global.screen.n_workspaces;
@@ -30,9 +30,9 @@ index 7aa57beb3..8751c4c4d 100644
 +                    for (let i = 0; i < nWorkspaces; i++) {
 +                        let index = i;
 +                        let name = Meta.prefs_get_workspace_name(i);
-+                        let subitem = item.menu.addAction(name, Lang.bind(this, function() {
++                        let subitem = item.menu.addAction(name, () => {
 +                            window.change_workspace_by_index(index, false);
-+                        }));
++                        });
 +                        subitem.setSensitive(currentIndex != i);
 +                    }
 +                }
@@ -40,5 +40,5 @@ index 7aa57beb3..8751c4c4d 100644
          }
  
 -- 
-2.14.2
+2.17.1
 

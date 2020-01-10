@@ -1,6 +1,6 @@
-From 3ff1be9fe127a51092b1f5b97d65af7fff75041d Mon Sep 17 00:00:00 2001
-From: rpm-build <rpm-build>
-Date: Mon, 13 Nov 2017 14:17:18 -0500
+From 5bd84b34622a3e5919e979b99d1d4872d355d18d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Florian=20M=C3=BCllner?= <fmuellner@gnome.org>
+Date: Mon, 4 Jun 2018 13:48:02 -0400
 Subject: [PATCH] system: don't throw an exception if power off disabled
 
 ---
@@ -8,18 +8,18 @@ Subject: [PATCH] system: don't throw an exception if power off disabled
  1 file changed, 8 insertions(+), 5 deletions(-)
 
 diff --git a/js/ui/status/system.js b/js/ui/status/system.js
-index 2a8ca47..37d140a 100644
+index 68a0b4b5b..2ab38419f 100644
 --- a/js/ui/status/system.js
 +++ b/js/ui/status/system.js
 @@ -40,66 +40,69 @@ var AltSwitcher = new Lang.Class({
-         this._clickAction.connect('long-press', Lang.bind(this, this._onLongPress));
+         this._clickAction.connect('long-press', this._onLongPress.bind(this));
  
          this.actor = new St.Bin();
-         this.actor.connect('destroy', Lang.bind(this, this._onDestroy));
+         this.actor.connect('destroy', this._onDestroy.bind(this));
          this.actor.connect('notify::mapped', () => { this._flipped = false; });
      },
  
-     _sync: function() {
+     _sync() {
          let childToShow = null;
  
          if (this._standard.visible && this._alternate.visible) {
@@ -65,14 +65,14 @@ index 2a8ca47..37d140a 100644
          this.actor.visible = (childToShow != null);
      },
  
-     _onDestroy: function() {
+     _onDestroy() {
          if (this._capturedEventId > 0) {
              global.stage.disconnect(this._capturedEventId);
              this._capturedEventId = 0;
          }
      },
  
-     _onCapturedEvent: function(actor, event) {
+     _onCapturedEvent(actor, event) {
          let type = event.type();
          if (type == Clutter.EventType.KEY_PRESS || type == Clutter.EventType.KEY_RELEASE) {
              let key = event.get_key_symbol();
@@ -83,9 +83,9 @@ index 2a8ca47..37d140a 100644
          return Clutter.EVENT_PROPAGATE;
      },
  
-     _onLongPress: function(action, actor, state) {
+     _onLongPress(action, actor, state) {
          if (state == Clutter.LongPressState.QUERY ||
              state == Clutter.LongPressState.CANCEL)
 -- 
-2.14.3
+2.17.1
 
